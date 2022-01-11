@@ -1,0 +1,280 @@
+COMANDOS BÁSICOS
+
+Liberar autorização no projeto
+>> gcloud auth list
+
+Criar um novo arquivo
+>> touch <nome do arquivo com extensão>
+
+Listar os arquivos no diretório
+>> ls
+
+Editar um arquivo no diretório
+>> nano <nome do arquivo com extensão>
+
+Salvar o arquivo editado
+ Ctrl+X, Y, Enter
+
+Mostrar o conteúdo de um arquivo
+>> cat <nome do arquivo com extensão>
+
+====================================================================
+CRIANDO MÁQUINA VIRTUAL
+
+1 - Criar uma nova instância;
+
+2 - na linha da instância, clicar em SSH (Secure Shell) para abrir direto no navegador;
+
+Instalando o servidor Web NGINX
+
+1 - Acessar o root no terminal SSH
+>> sudo su - 
+
+2 - Atualizar o SO
+>> apt -get update
+
+3 - Instalando o NGINX
+>> apt-get install nginx -y
+
+4 - Confirmando NGINX em execução
+>> ps auwx | grep nginx
+
+5 - Ver a página da , voltar ao console e clicar no IP ou copiar o IP e colocar junto ao URL http://EXTERNAL_IP/ no navegador
+
+=======================================================================
+CRIAR UMA INSTANCIA COM CLOUD SHELL
+
+1- Criar uma nova instância
+>> gcloud compute instances create <nome da instancia> --machine-type <ver opções de máquina> --zone <zona da máquina>
+
+	gcloud compute permite gerenciar os recursos do Compute Engine de forma mais simples do que 	com a API do Compute Engine.
+
+	instances create cria uma nova instância com o nome definido <nome da instância>.
+
+	A sinalização --machine-type especifica o tipo de máquina n1-standard-2.
+
+	A sinalização --zone especifica o local de criação da VM.
+
+	Ao omitir --zone, a ferramenta gcloud pode inferir a zona desejada com base nas propriedades 	padrão. Se as outras configurações de instância necessárias, como machine type e image, não 	forem especificadas no comando create, elas serão definidas com os valores padrão
+
+2 - Definir uma zona padrão (OPCIONAL)
+>> gcloud config set compute/region <zona da máquina>
+
+3 - Permitir tráfego HTTP
+
+4 - Conectar através do SSH a instancia criada
+>> gcloud compute ssh <nome da instância> --zone <zona da instância>
+
+5 - Depois de conectar, desconectar do SSH
+>> exit
+
+=======================================================================
+CRIAR UMA MÁQUINA VIRTUAL COM WINDOWS SERVER 2012
+
+1 - Criar uma nova instancia e selecionar no Disco de inicialização o Windows Server 2012 Datacenter
+
+2 - Abrir o Cloud Shell, dar as autorizações (ver 1 tópico);
+
+3 - Testar a incialização do windows para uma conexão RDP (Remote Desktop Protocol)
+>> gcloud compute instances get-serial-port-output <nome da instância>
+
+se estiver tudo certo, vai aparecer:
+----------------------------------------------------------------
+Instance setup finished. <nome da instância> is ready to use.
+----------------------------------------------------------------
+em alguma parte das várias linhas que irão aparecer.
+
+4 - Se for solicitado, apertar N
+
+5 - Para criar uma senha de acesso ao RDP 
+	
+	1 - Definir ou resetar o password do RDP
+	>> gcloud compute reset-windows-password <nome da instancia> --zone <zona da instância> --		user <nome de usuário - padrão: administrador>
+	
+	2 - Acessar as instâncias no Console
+	
+	3 - Clicar em RDP > Create or reset Windows password
+
+6 - Fazer o Download do arquivo RDP
+
+7 - Clicar 2 vezes e abrir a nova máquina virtual remota com windows.
+
+=========================================================================
+PRIMEIROS PASSOS COM O Cloud Shell E A gcloud
+
+Verificar as configurações de região e zona padrão
+>> gcloud config get-value compute/zone
+>> gcloud config get-value compute/region
+
+Identificar a zona do projeto
+>> gcloud compute project-info describe --project <ID do projeto>
+
+Definir variáveis de ambiente
+	
+	1 - Criar uma variável para armazenar o ID do projeto
+	>> export PROJECT_ID=<ID do projeto>
+	
+	2 - Criar uma variável para armazenar a zona do projeto
+	>> export ZONE=<zona do projeto>
+	
+	3 - Verificar valor de uma variável
+	>> echo $<variável>
+
+COMANDOS GCLOUD
+
+Verificar a lista de configurações
+>> gcloud config list
+
+Verificar a kista de todas as configurações
+>> gcloud config list --all
+
+Listar todos os componentes
+>> gcloud components list
+
+Instalar os componentes Beta
+>> sudo apt-get install google-cloud-sdk
+
+Ativa o modo gcloud interactive
+>> gcloud beta interactive
+
+=========================================================================
+KUBERNETES ENGINES
+
+1 - Definir uma zona do Compute padrão
+>> gcloud config set compute/zone <zona desejada> (ex: us-central1-a)
+
+2 - Criar um cluster do GKE (Google Kubernetes Engine)
+>> gcloud container clusters create <nome do cluster>
+
+3 - Autenticar o Cluster
+>> gcloud container clusters get-credentials <nome do cluster>
+
+4 - Implantar um aplicativo no cluster
+>>  kubectl create deployment <nome da implantação + paramêtros>
+ex: kubectl create deployment hello-server --image=gcr.io/google-samples/hello-app:1.0
+
+5 - Criar um serviço do Kubernetes
+>> kubetcl expose deployment <nome da implamentação + parametros>
+ex: kubetcl expose deployment hello-server --type=LoadBalancer --port 8080
+	onde:
+		--type=Loadbalancer cria um balanceador de carga do Compute Engine para o container.
+		--port especificar a porta que o container expõe.
+
+6 - Inspecionar um serviço Kubernet
+>> kubectl get service
+
+7 - Excluir o cluster
+>> gcloud container clusters delete <nome do cluster>
+
+========================================================================
+CONFIGURAR BALANCEADORES DE CARGA
+
+1- Criar uma nova instância de VM
+>> gcloud compute instances create <nome da instancia> --machine-type <ver opções de máquina> --zone <zona da máquina>
+
+2 - Criar uma regra de firewall para permitir o trafego externo para as instâncias de VM
+>> gcloud compute firewall-rules create www-firewall-network-lb \
+    --target-tags network-lb-tag --allow tcp:80
+
+3 - Listar o IP das VM criadas
+>> gcloud compute instances list
+
+4 - Verificar se a instancia está sendo executada com curl(biblioteca e ferramenta para transferir dados)
+>> curl http://[IP_ADDRESS]
+
+5 - Criar um endereço IP externo estático para o balanceador de carga
+>> gcloud compute addresses create network-lb-ip-1 \ region <zona da maquina>
+
+6 - Adicionar um recurso legado de verificação de integridade HTTP
+>> gcloud compute http-health-checks create basic-check
+
+7 - Adicionar um pool de destino na mesma região da instância
+>> gcloud compute target-pools create \ --region <zona da maquina> --http-health-check basic check
+
+8 - Adicionar as instâncias ao pool
+>> gcloud compute target-pools add-instances www-pool \ --instances www1, www2, www3
+
+9 - Adionar uma regra de encaminhamento
+>> gcloud compute fowarding-rules create www-rule \ --region <zona da instancia> \ --ports 80 \ address newtwork-lb-ip-1 \ target-pool www-pool
+
+10 - Enviar tráfego para as instâncias
+>> gcloud compute forwarding-rules describe www-rule --region <zona da instancia>
+
+11 - Usar o comando curl para acessar o endereço IP definido
+>> while true; do curl -m1 <endereço ip  do passo 3>; done
+obs: A resposta do comando curl alterna de forma aleatória entre as três instâncias. Se ocorrer alguma falha, aguarde cerca de 30 segundos até que a configuração esteja totalmente carregada e suas instâncias marcadas como íntegras antes de tentar novamente.
+
+========================================================================
+CRIAR UM BALANCEADOR DE CARGA HTTP
+
+1 - Criar o modelo do balanceador de carga:
+>> gcloud compute instance-templates create lb-backend-template \
+   --region=us-central1 \
+   --network=default \
+   --subnet=default \
+   --tags=allow-health-check \
+   --image-family=debian-9 \
+   --image-project=debian-cloud \
+   --metadata=startup-script='#! /bin/bash
+     apt-get update
+     apt-get install apache2 -y
+     a2ensite default-ssl
+     a2enmod ssl
+     vm_hostname="$(curl -H "Metadata-Flavor:Google" \
+     http://169.254.169.254/computeMetadata/v1/instance/name)"
+     echo "Page served from: $vm_hostname" | \
+     tee /var/www/html/index.html
+     systemctl restart apache2'
+
+2 - Criar o gerenciador de instâncias com base no modelo
+>> gcloud compute instance-groups managed create lb-backend-group \
+    --template=lb-backend-template --size=2 --zone<zona da instancia>
+
+3 - Crie a regra de firewall fw-allow-health-check. Ela é uma regra de entrada que permite o tráfego dos sistemas de verificação de integridade do Google Cloud (130.211.0.0/22 e 35.191.0.0/16). Este laboratório usa a tag de destino allow-health-check para identificar as VMs.
+>> gcloud compute firewall-rules create fw-allow-health-check \
+    --network=default \
+    --action=allow \
+    --direction=ingress \
+    --source-ranges=130.211.0.0/22,35.191.0.0/16 \
+    --target-tags=allow-health-check \
+    --rules=tcp:80
+
+4 - Criar um IP externo estático e global para os cliente acessarem o balanceador de carga
+>> gcloud compute addresses create lb-ipv4-1 \
+    --ip-version=IPV4 \
+    --global
+
+5 - Anotar o IP criado
+>> gcloud compute addresses describe lb-ipv4-1 \
+    --format="get(address)" \
+    --global 
+
+6 - Criar um serviço de back-end
+>> gcloud compute backend-services create web-backend-service \
+     --protocol=HTTP \
+     --port-name=http \
+     --health-checks=http-basic-check \
+     --global
+
+7 - Adicionar as instâncias como back-end do serviço de back-end
+>> gcloud compute backend-service create web-back-end-service \
+    --instance-group=lb-backend-group \
+    --instance-group-zone=<zona das instancias> \
+    --global
+
+8 - Criar u mapa de URLS para encaminhar as solicitações recebidas ao serviço de back-end padrão
+>> gcloud compute url-maps create web-map-http \
+    --default-service web-backend-service
+
+9 - Criar um proxy HTTP de destino para encaminhar as solicitações ao mapa de URLs
+>> gcloud compute target-http-proxies create http-lb-proxy \
+    --url-map web-map-http
+
+10 - Criar uma regra de encaminhamento global para encaminhar as solicitações recebidas no proxy
+>> gcloud compute forwarding-rules create http-content-rule \
+    --address=lb-ipv4-1 \
+    --global \
+    --target-http-proxy=http-lb-proxy \
+    --ports=80
+
+=============================================================================
